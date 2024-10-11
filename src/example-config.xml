@@ -4,8 +4,8 @@
     <value name="CBOE">2</value>
 </type>
 <type name="Gateway" type="struct">
-    <field name="ip" type="string" />
-    <field name="port" type="uint" />
+    <field name="ip" type="string" default="127.0.0.1" />
+    <field name="port" type="uint" default="1234" />
     <field name="username" type="string" presence="optional" />
     <field name="password" type="string" presence="optional" />
     <field name="exchange" type="Exchange" />

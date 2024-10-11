@@ -14,10 +14,12 @@ def parse_xml_schema(xml_string):
         elif type_kind == 'struct':
             types[name] = {'kind': 'struct', 'fields': []}
             for field_elem in type_elem.findall('field'):
+                default_value = field_elem.get('default', '')
                 types[name]['fields'].append({
                     'name': field_elem.get('name'),
                     'type': field_elem.get('type'),
-                    'presence' : field_elem.get('presence', 'required')
+                    'default': field_elem.get('default', ''),
+                    'presence' : field_elem.get('presence', default_value == '' and 'required' or 'optional')
                 })
     return types
 
@@ -78,6 +80,12 @@ def generate_json_parser_fwd(types):
         parser_code += f"inline {name} parse_{name.lower()}(const nlohmann::json&);\n"
     return parser_code
 
+def get_default_value(field):
+    if field['type'] == 'string' and field['default'] != '':
+        return f"\"{field['default']}\""
+    else:
+        return field['default']
+
 def generate_json_parsers(types):
     parser_code = "\n// JSON parsing functions\n"
     parser_code += "class ParseException : public std::runtime_error {\n"
@@ -103,7 +111,7 @@ def generate_json_parsers(types):
             for field in type_info['fields']:
                 parser_code += f"    if (j.contains(\"{field['name']}\")) {{\n"
                 if is_primitive(field['type']):
-                    parser_code += f"        result.{field['name']} = j.at(\"{field['name']}\").get<{get_cpp_type(field['type'])}>();\n"
+                    parser_code += f"        result.{field['name']} = j.at(\"{field['name']}\").get<{get_cpp_type(field['type'])}>({get_default_value(field)});\n"
                 elif field['type'].startswith(ARRAY_PREFIX):
                     inner_type = field['type'][len(ARRAY_PREFIX):-1]
                     parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
