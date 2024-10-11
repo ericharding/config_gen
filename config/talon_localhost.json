@@ -7,13 +7,10 @@
     }
   ],
   "gateway": {
-    "ip": "127.0.0.1",
+    "ip": "127.0.0.2",
     "port": 12346,
     "username": "BESL",
     "password": "bb2besl",
-    "sessionSubID": "0002",
-    "clearingAccount": "BLK",
-    "clearingFirm": "TEST",
     "exchange": "CME"
   }
 }
