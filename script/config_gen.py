@@ -81,10 +81,11 @@ def generate_json_parser_fwd(types):
     return parser_code
 
 def get_default_value(field):
-    if field['type'] == 'string' and field['default'] != '':
-        return f"\"{field['default']}\""
-    else:
-        return field['default']
+    return ''
+    # if field['type'] == 'string' and field['default'] != '':
+    #     return f"\"{field['default']}\""
+    # else:
+    #     return field['default']
 
 def generate_json_parsers(types):
     parser_code = "\n// JSON parsing functions\n"
