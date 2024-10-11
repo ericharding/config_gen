@@ -1,0 +1,19 @@
+{
+  "channels": [
+    {
+      "interface": "lo",
+      "group": "239.221.16.5",
+      "port": 15001
+    }
+  ],
+  "gateway": {
+    "ip": "127.0.0.1",
+    "port": 12346,
+    "username": "BESL",
+    "password": "bb2besl",
+    "sessionSubID": "0002",
+    "clearingAccount": "BLK",
+    "clearingFirm": "TEST",
+    "exchange": "CME"
+  }
+}

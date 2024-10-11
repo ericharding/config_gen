@@ -1,0 +1,22 @@
+{
+  "channels": [
+    {
+      "interface": "enp13s0f0np0",
+      "group": "239.221.16.5",
+      "port": 15001
+    }
+  ],
+  "gateway": {
+    "ip": "192.168.16.105",
+    "port": 12346,
+    "username": "BESL",
+    "password": "bb2besl",
+    "sessionSubID": "0002",
+    "clearingAccount": "BLK",
+    "clearingFirm": "TEST"
+  },
+  "cores": {
+    "orderSender": 8,
+    "computation": 10
+  }
+}
