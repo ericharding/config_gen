@@ -114,11 +114,11 @@ def generate_json_parsers(types):
                     parser_code += "        }\n"
                 elif field['type'].startswith(MAP_PREFIX):
                     inner_type = field['type'][len(MAP_PREFIX):-1]
-                    parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
+                    parser_code += f"        for (const auto& [key,value] : j.at(\"{field['name']}\").items()) {{\n"
                     if is_primitive(inner_type):
-                        parser_code += f"            result.{field['name']}[item.key()] = item.get<{get_cpp_type(inner_type)}>()\n"
+                        parser_code += f"            result.{field['name']}[key] = value.get<{get_cpp_type(inner_type)}>();\n"
                     else:
-                        parser_code += f"            result.{field['name']}[item.key()] = parse_{inner_type.lower()}(item);\n"
+                        parser_code += f"            result.{field['name']}[key] = parse_{inner_type.lower()}(value);\n"
                     parser_code += "        }\n"
                 else:
                     parser_code += f"        result.{field['name']} = parse_{field['type'].lower()}(j.at(\"{field['name']}\"));\n"
