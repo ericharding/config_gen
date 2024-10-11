@@ -50,16 +50,24 @@ def generate_cpp_types(types):
     
     return cpp_code
 
+ARRAY_PREFIX = "array["
+MAP_PREFIX = "map["
+
+def is_primitive(xml_type):
+    return xml_type in ['int', 'uint', 'string', 'double']
+
 def get_cpp_type(xml_type):
     if xml_type == 'string':
         return 'std::string'
     elif xml_type == 'uint':
-        return 'unsigned int'
-    elif xml_type.startswith('array['):
-        inner_type = xml_type[6:-1]
+        return 'uint32_t'
+    elif xml_type == 'int':
+        return 'int32_t'
+    elif xml_type.startswith(ARRAY_PREFIX):
+        inner_type = xml_type[len(ARRAY_PREFIX):-1]
         return f'std::vector<{get_cpp_type(inner_type)}>'
-    elif xml_type.startswith('map['):
-        inner_type = xml_type[4:-1]
+    elif xml_type.startswith(MAP_PREFIX):
+        inner_type = xml_type[len(MAP_PREFIX):-1]
         return f'std::map<std::string,{get_cpp_type(inner_type)}>'
     else:
         return xml_type
@@ -88,21 +96,22 @@ def generate_json_parsers(types):
             parser_code += "    }\n\n"
             for field in type_info['fields']:
                 parser_code += f"    if (j.contains(\"{field['name']}\")) {{\n"
-                if get_cpp_type(field['type']) == 'std::string':
-                    parser_code += f"        result.{field['name']} = j.at(\"{field['name']}\").get<std::string>();\n"
-                elif field['type'] in ['int', 'uint']:
+                if is_primitive(field['type']):
                     parser_code += f"        result.{field['name']} = j.at(\"{field['name']}\").get<{get_cpp_type(field['type'])}>();\n"
-                elif field['type'].startswith('array<'):
-                    inner_type = field['type'][6:-1]
+                elif field['type'].startswith(ARRAY_PREFIX):
+                    inner_type = field['type'][len(ARRAY_PREFIX):-1]
                     parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
                     parser_code += f"            result.{field['name']}.push_back(parse_{inner_type.lower()}(item));\n"
                     parser_code += "        }\n"
                 else:
                     parser_code += f"        result.{field['name']} = parse_{field['type'].lower()}(j.at(\"{field['name']}\"));\n"
                 parser_code += f"        json_fields.erase(\"{field['name']}\");\n"
-                parser_code += "    } else {\n"
-                parser_code += f"        throw ParseException(\"Missing required field '{field['name']}' in {name}\");\n"
-                parser_code += "    }\n\n"
+                if field['presence'] == 'required':
+                    parser_code += "    } else {\n"
+                    parser_code += f"      throw ParseException(\"Missing required field '{field['name']}' in {name}\");\n"
+                    parser_code += "    }\n\n"
+                else:
+                    parser_code += "    }\n\n"
             parser_code += "    if (!json_fields.empty()) {\n"
             parser_code += f"        throw ParseException(\"Unexpected field '\" + *json_fields.begin() + \"' in {name}\");\n"
             parser_code += "    }\n"
