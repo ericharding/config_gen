@@ -8,6 +8,7 @@
     <field name="port" type="uint" />
     <field name="username" type="string" presence="optional" />
     <field name="password" type="string" presence="optional" />
+    <field name="exchange" type="Exchange" />
 </type>
 <type name="Channel" type="struct">
     <field name="interface" type="string" />

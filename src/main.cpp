@@ -1,3 +1,5 @@
+#include "example-config.h"
+
 #include <iostream>
 
 int main(int, char**) {
