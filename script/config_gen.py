@@ -72,6 +72,12 @@ def get_cpp_type(xml_type):
     else:
         return xml_type
 
+def generate_json_parser_fwd(types):
+    parser_code = "\n// JSON parsing declarations\n"
+    for name, type_info in types.items():
+        parser_code += f"inline {name} parse_{name.lower()}(const nlohmann::json&);\n"
+    return parser_code
+
 def generate_json_parsers(types):
     parser_code = "\n// JSON parsing functions\n"
     parser_code += "class ParseException : public std::runtime_error {\n"
@@ -101,7 +107,18 @@ def generate_json_parsers(types):
                 elif field['type'].startswith(ARRAY_PREFIX):
                     inner_type = field['type'][len(ARRAY_PREFIX):-1]
                     parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
-                    parser_code += f"            result.{field['name']}.push_back(parse_{inner_type.lower()}(item));\n"
+                    if is_primitive(inner_type):
+                        parser_code += f"            result.{field['name']}.push_back(item.get<{get_cpp_type(inner_type)}>());\n"
+                    else:
+                        parser_code += f"            result.{field['name']}.push_back(parse_{inner_type.lower()}(item));\n"
+                    parser_code += "        }\n"
+                elif field['type'].startswith(MAP_PREFIX):
+                    inner_type = field['type'][len(MAP_PREFIX):-1]
+                    parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
+                    if is_primitive(inner_type):
+                        parser_code += f"            result.{field['name']}[item.key()] = item.get<{get_cpp_type(inner_type)}>()\n"
+                    else:
+                        parser_code += f"            result.{field['name']}[item.key()] = parse_{inner_type.lower()}(item);\n"
                     parser_code += "        }\n"
                 else:
                     parser_code += f"        result.{field['name']} = parse_{field['type'].lower()}(j.at(\"{field['name']}\"));\n"
@@ -126,10 +143,12 @@ def main(xml_file_path, output_file_path):
     
     types = parse_xml_schema(xml_content)
     cpp_types = generate_cpp_types(types)
+    json_fwd = generate_json_parser_fwd(types);
     json_parsers = generate_json_parsers(types)
     
     with open(output_file_path, 'w') as output_file:
         output_file.write(cpp_types)
+        output_file.write(json_fwd)
         output_file.write(json_parsers)
     import datetime
     print(f"\n[{datetime.datetime.now()}] Generated {output_file_path} from {xml_file_path}")
