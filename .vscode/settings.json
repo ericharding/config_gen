@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        ".fantomasignore": "ignore",
+        "*.toml": "toml",
+        "memory": "cpp",
+        "istream": "cpp",
+        "functional": "cpp",
+        "map": "cpp",
+        "fstream": "cpp"
+    }
+}
