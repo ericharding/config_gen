@@ -26,6 +26,7 @@ def parse_xml_schema(xml_string):
 def generate_includes():
     return "\n".join([
         "#pragma once\n",
+        "#include \"config_helpers.h\"",
         "#include <map>",
         "#include <optional>",
         "#include <ostream>",
@@ -185,7 +186,7 @@ def generate_json_parsers(types):
             for field in type_info['fields']:
                 parser_code += f"    if (j.contains(\"{field['name']}\")) {{\n"
                 if is_primitive(field['type']):
-                    parser_code += f"        result.{field['name']} = parseJsonValue<{get_cpp_type(field['type'])}>(j.at(\"{field['name']}\"), {get_default_value(field)});\n"
+                    parser_code += f"        result.{field['name']} = config::parseJsonValue<{get_cpp_type(field['type'])}>(j.at(\"{field['name']}\"), {get_default_value(field)});\n"
                 elif is_array(field):
                     inner_type = field['type'][len(ARRAY_PREFIX):-1]
                     parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
