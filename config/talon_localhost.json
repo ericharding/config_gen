@@ -10,7 +10,7 @@
     1,2,3,4
   ],
   "channel_strings": [
-    "a", "b"
+    "a", "b", "c"
   ],
   "gateway": {
     "ip": "${GATEWAY}",
@@ -18,5 +18,16 @@
     "username": "BESL",
     "password": "bb2besl",
     "exchange": "CME"
+  },
+  "channel_by_name": {
+    "channel1": {
+      "interface": "loop",
+      "group": "333.221.16.5",
+      "port": "${PORT}"
+    }
+  },
+  "cores": {
+    "One": 1,
+    "Two": 2
   }
 }

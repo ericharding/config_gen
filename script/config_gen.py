@@ -128,7 +128,14 @@ def generate_printers(types):
                 elif is_map(field):
                     inner_type = field['type'][len(MAP_PREFIX):-1]
                     parser_code += f"    result += indent+\"  {field['name']} {{\\n\";\n"
-                    # todo
+                    parser_code += f"    for (const auto& [key, value] : value.{field['name']}) {{\n"
+                    if inner_type == 'string':
+                        parser_code += f"        result += indent+\"    '\" + key + \"': '\" + value + \"'\\n\";\n"
+                    elif is_primitive(inner_type):
+                        parser_code += f"        result += indent+\"    '\" + key + \"': \" + to_string(value) + \"\\n\";\n"
+                    else:
+                        parser_code += f"        result += indent+\"    '\" + key + \"': \" + to_string(value, indent_spaces+4) + \"\\n\";\n"
+                    parser_code += f"    }}\n"
                     parser_code += f"    result += indent+\"  }}\\n\";\n"
                 elif not is_primitive(field['type']):
                     parser_code += f"    result += indent+\"  {field['name']} = \" + to_string(value.{field['name']}, indent_spaces+2) + \"\\n\";\n"
