@@ -105,11 +105,11 @@ def generate_printers(types):
         if type_info['kind'] == 'enum':
             parser_code += "    switch(value) {\n"
             for value in type_info['values']:
-                parser_code += f"        case {name}::{value}: return indent + \"{value}\"; \n"
+                parser_code += f"        case {name}::{value}: return \"{value}\"; \n"
             parser_code += f"        default: return \"\"; \n"
             parser_code += "    }\n"
         elif type_info['kind'] == 'struct':
-            parser_code += f"    std::string result = indent+\"{name} {{\\n\";\n"
+            parser_code += f"    std::string result = \"{name} {{\\n\";\n"
             for field in type_info['fields']:
                 if is_string(field):
                     parser_code += f"    result += indent+\"  {field['name']} = '\" + value.{field['name']} + \"'\\n\";\n"
@@ -119,15 +119,22 @@ def generate_printers(types):
                     parser_code += f"    for (auto& i : value.{field['name']}) {{\n"
                     if inner_type == 'string':
                         parser_code += f"        result += indent+\"    '\" + i + \"'\\n\";\n"
-                    else:
+                    elif is_primitive(inner_type):
                         parser_code += f"        result += indent+\"    \" + to_string(i) + \"\\n\";\n"
+                    else:
+                        parser_code += f"        result += indent+\"    \" + to_string(i,indent_spaces+4) + \"\\n\";\n"
                     parser_code += f"    }};\n"
                     parser_code += f"    result += indent+\"  ]\\n\";\n"
                 elif is_map(field):
-                    pass
+                    inner_type = field['type'][len(MAP_PREFIX):-1]
+                    parser_code += f"    result += indent+\"  {field['name']} {{\\n\";\n"
+                    # todo
+                    parser_code += f"    result += indent+\"  }}\\n\";\n"
+                elif not is_primitive(field['type']):
+                    parser_code += f"    result += indent+\"  {field['name']} = \" + to_string(value.{field['name']}, indent_spaces+2) + \"\\n\";\n"
                 else:
                     parser_code += f"    result += indent+\"  {field['name']} = \" + to_string(value.{field['name']}) + \"\\n\";\n"
-            parser_code += f"    result += \"}}\\n\";\n"
+            parser_code += f"    result += indent+\"}}\\n\";\n"
             parser_code += f"    return result;\n"
         parser_code += "}\n"
     parser_code += "} // namespace std\n\n"
