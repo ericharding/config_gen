@@ -97,7 +97,7 @@ def is_map(field):
 def generate_printers(types):
     parser_code = "\n// Print generated types\n"
     parser_code += "namespace std {\n"
-    parser_code += "template <class T>"
+    parser_code += "template <class T>\n"
     parser_code += "std::string to_string(const T& t, uint indent_spaces) {\n"
     parser_code += "  std::string indent(indent_spaces, ' ');\n"
     parser_code += "  return indent+std::to_string(t);\n"
