@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.22)
 
 # A low level generate macro that can be used to build tool specific generate macros
+# NOTE: tool must be an absolute path with no spaces. i.e. use an executable script rather than python foo.py
 function(BE_GENERATE INPUT_FILE OUTPUT_DIR TOOL)
     cmake_parse_arguments(ARG "" "LIBNAME" "ENV" ${ARGN})
     get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
     get_filename_component(NAME_WITHOUT_EXT "${FILE_NAME}" NAME_WE)
     set(TARGET_NAME BE_GENERATE_TARGET_${FILE_NAME})
     set(TARGET_DIR ${OUTPUT_DIR}/${NAME_WITHOUT_EXT}/${NAME_WITHOUT_EXT})
-    set(DEFAULT_LIBRARY_NAME "lib-${FILE_NAME}")
+    set(DEFAULT_LIBRARY_NAME "lib-${NAME_WITHOUT_EXT}")
     set(LIBRARY_NAME ${ARG_LIBNAME})
     if(NOT LIBRARY_NAME)
         set(LIBRARY_NAME ${DEFAULT_LIBRARY_NAME})
@@ -27,7 +28,7 @@ function(BE_GENERATE INPUT_FILE OUTPUT_DIR TOOL)
         OUTPUT ${TARGET_DIR}/dummy
         COMMAND ${ENV_COMMAND} ${TOOL} ${INPUT_FILE} ${TARGET_DIR}
         COMMAND ${CMAKE_COMMAND} -E touch ${TARGET_DIR}/dummy
-        DEPENDS ${INPUT_FILE} ${TOOL} sbe
+        DEPENDS ${INPUT_FILE} ${TOOL} 
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Generating headers from ${INPUT_FILE} into ${TARGET_DIR}"
     )
@@ -50,21 +51,16 @@ function(BE_GENERATE INPUT_FILE OUTPUT_DIR TOOL)
     add_dependencies(${LIBRARY_NAME} ${TARGET_NAME})
     
     message(STATUS "Added library ${LIBRARY_NAME} depending on generated output from ${FILE_NAME}")
+    set(LIBRARY_NAME ${LIBRARY_NAME} PARENT_SCOPE)
 endfunction()
 
 # To use GE_GENERATE wrap it in a function to run the specific generation tool
-# function(TEST_GENERATE INPUT_FILE)
-#     BE_GENERATE(${INPUT_FILE} ${CMAKE_BINARY_DIR}/_gen_test ${CMAKE_SOURCE_DIR}/scripts/build/generate.sh)
-# endfunction()
-
-set(SBE_GENERATE_TOOL "${CMAKE_CURRENT_LIST_DIR}/../scripts/build/generate_sbe.sh" CACHE FILEPATH "Path to generate_sbe.sh" FORCE)
-function(SBE_GENERATE INPUT_FILE NAMESPACE)
-    get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
-    get_filename_component(NAME_WITHOUT_EXT "${FILE_NAME}" NAME_WE)
-    set(LIBRARY_NAME "lib-${NAME_WITHOUT_EXT}")
-    message(STATUS "Genrate_tool: ${SBE_GENERATE_TOOL} for ${LIBRARY_NAME}")
-    BE_GENERATE(${INPUT_FILE} ${CMAKE_BINARY_DIR}/_gen_sbe ${SBE_GENERATE_TOOL}
-        LIBNAME ${LIBRARY_NAME}
-        ENV "NAMESPACE=${NAMESPACE}" "SBE_TOOL=${SBE_TOOL}")
-    target_link_libraries(${LIBRARY_NAME} INTERFACE sbe)
+function(CONFIG_GENERATE INPUT_FILE)
+    BE_GENERATE(
+        ${INPUT_FILE} 
+        ${CMAKE_BINARY_DIR}/_gen_config 
+        "${CMAKE_SOURCE_DIR}/script/config_gen.py"
+        )
+    target_link_libraries(${LIBRARY_NAME} INTERFACE nlohmann_json::nlohmann_json)
 endfunction()
+

@@ -1,5 +1,7 @@
+#!/bin/python
 import xml.etree.ElementTree as ET
 import sys
+import os
 
 def parse_xml_schema(xml_string):
     root = ET.fromstring(xml_string)
@@ -220,7 +222,7 @@ def generate_json_parsers(types):
     
     return parser_code
 
-def main(xml_file_path, output_file_path):
+def main(xml_file_path, output_dir):
     with open(xml_file_path, 'r') as xml_file:
         xml_content = xml_file.read()
     
@@ -230,6 +232,8 @@ def main(xml_file_path, output_file_path):
     json_fwd = generate_json_parser_fwd(types);
     json_parsers = generate_json_parsers(types)
     
+    base_name = os.path.splitext(os.path.basename(xml_file_path))[0]
+    output_file_path = os.path.join(output_dir, f"{base_name}.h")
     with open(output_file_path, 'w') as output_file:
         output_file.write(cpp_types)
         output_file.write(printers)
@@ -240,7 +244,7 @@ def main(xml_file_path, output_file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3 or "--help" in sys.argv:
-        print("Usage: python script.py <input_xml_file> <output_cpp_file>")
+        print("Usage: python script.py <input_xml_file> <output_dir>")
         sys.exit(1)
     
     main(sys.argv[1], sys.argv[2])
