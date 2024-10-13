@@ -30,6 +30,7 @@ def generate_includes():
         "#include <vector>",
         "#include <map>",
         "#include <set>",
+        "#include <ostream>",
         "#include <nlohmann/json.hpp>",
         "\n\n"
         ])
@@ -80,6 +81,57 @@ def generate_json_parser_fwd(types):
         parser_code += f"inline {name} parse_{name.lower()}(const nlohmann::json&);\n"
     return parser_code
 
+def is_string(field):
+    return field['type'] == 'string'
+
+def is_array(field):
+    return field['type'].startswith(ARRAY_PREFIX)
+
+def is_map(field):
+    return field['type'].startswith(MAP_PREFIX)
+
+def generate_printers(types):
+    parser_code = "\n// Print generated types\n"
+    parser_code += "namespace std {\n"
+    for name, type_info in types.items():
+        parser_code += f"inline std::string to_string(const {name}& value, uint indent_spaces=0) {{\n"
+        parser_code += "    std::string indent(indent_spaces, ' ');\n"
+        if type_info['kind'] == 'enum':
+            parser_code += "    switch(value) {\n"
+            for value in type_info['values']:
+                parser_code += f"        case {name}::{value}: return indent + \"{value}\"; \n"
+            parser_code += f"        default: return \"\"; \n"
+            parser_code += "    }\n"
+        elif type_info['kind'] == 'struct':
+            parser_code += f"    std::string result = indent+\"{name} {{\\n\";\n"
+            for field in type_info['fields']:
+                if is_string(field):
+                    parser_code += f"    result += indent+\"  {field['name']} = '\" + value.{field['name']} + \"'\\n\";\n"
+                elif is_array(field):
+                    inner_type = field['type'][len(ARRAY_PREFIX):-1]
+                    parser_code += f"    result += indent+\"  {field['name']} [\\n\";\n"
+                    parser_code += f"    for (auto& i : value.{field['name']}) {{\n"
+                    if inner_type == 'string':
+                        parser_code += f"        result += indent+\"    '\" + i + \"'\\n\";\n"
+                    else:
+                        parser_code += f"        result += indent+\"    \" + to_string(i) + \"\\n\";\n"
+                    parser_code += f"    }};\n"
+                    parser_code += f"    result += indent+\"  ]\\n\";\n"
+                elif is_map(field):
+                    pass
+                else:
+                    parser_code += f"    result += indent+\"  {field['name']} = \" + to_string(value.{field['name']}) + \"\\n\";\n"
+            parser_code += f"    result += \"}}\\n\";\n"
+            parser_code += f"    return result;\n"
+        parser_code += "}\n"
+    parser_code += "} // namespace std\n\n"
+    for name, type_info in types.items():
+        parser_code += f"inline std::ostream& operator<<(std::ostream& out, const {name}& value) {{\n"
+        parser_code += "    out << std::to_string(value);\n" 
+        parser_code += "    return out;\n"
+        parser_code += "}\n"
+    return parser_code
+
 def get_default_value(field):
     return ''
     # if field['type'] == 'string' and field['default'] != '':
@@ -113,7 +165,7 @@ def generate_json_parsers(types):
                 parser_code += f"    if (j.contains(\"{field['name']}\")) {{\n"
                 if is_primitive(field['type']):
                     parser_code += f"        result.{field['name']} = j.at(\"{field['name']}\").get<{get_cpp_type(field['type'])}>({get_default_value(field)});\n"
-                elif field['type'].startswith(ARRAY_PREFIX):
+                elif is_array(field):
                     inner_type = field['type'][len(ARRAY_PREFIX):-1]
                     parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
                     if is_primitive(inner_type):
@@ -121,7 +173,7 @@ def generate_json_parsers(types):
                     else:
                         parser_code += f"            result.{field['name']}.push_back(parse_{inner_type.lower()}(item));\n"
                     parser_code += "        }\n"
-                elif field['type'].startswith(MAP_PREFIX):
+                elif is_map(field):
                     inner_type = field['type'][len(MAP_PREFIX):-1]
                     parser_code += f"        for (const auto& [key,value] : j.at(\"{field['name']}\").items()) {{\n"
                     if is_primitive(inner_type):
@@ -152,11 +204,13 @@ def main(xml_file_path, output_file_path):
     
     types = parse_xml_schema(xml_content)
     cpp_types = generate_cpp_types(types)
+    printers = generate_printers(types)
     json_fwd = generate_json_parser_fwd(types);
     json_parsers = generate_json_parsers(types)
     
     with open(output_file_path, 'w') as output_file:
         output_file.write(cpp_types)
+        output_file.write(printers)
         output_file.write(json_fwd)
         output_file.write(json_parsers)
     import datetime

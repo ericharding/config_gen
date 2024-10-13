@@ -16,9 +16,10 @@
     <field name="port" type="uint" />
     <field name="name" type="string" presence="optional" />
 </type>
-<type name="config" type="struct">
+<type name="Config" type="struct">
     <field name="channels" type="array[Channel]" />
     <field name="channel_ids" type="array[int]" presence="optional" />
+    <field name="channel_strings" type="array[string]" />
     <field name="gateway" type="Gateway" />
     <!-- map only supports string keys -->
     <field name="channel_by_name" type="map[Channel]" presence="optional" />
