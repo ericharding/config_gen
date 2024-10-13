@@ -3,11 +3,17 @@
     {
       "interface": "lo",
       "group": "239.221.16.5",
-      "port": 15001
+      "port": "${PORT}"
     }
   ],
+  "channel_ids": [
+    1,2,3,4
+  ],
+  "channel_strings": [
+    "a", "b"
+  ],
   "gateway": {
-    "ip": "127.0.0.2",
+    "ip": "${GATEWAY}",
     "port": 12346,
     "username": "BESL",
     "password": "bb2besl",

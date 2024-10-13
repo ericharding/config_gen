@@ -26,11 +26,12 @@ def parse_xml_schema(xml_string):
 def generate_includes():
     return "\n".join([
         "#pragma once\n",
+        "#include <map>",
+        "#include <optional>",
+        "#include <ostream>",
+        "#include <set>",
         "#include <string>",
         "#include <vector>",
-        "#include <map>",
-        "#include <set>",
-        "#include <ostream>",
         "#include <nlohmann/json.hpp>",
         "\n\n"
         ])
@@ -138,11 +139,12 @@ def generate_printers(types):
     return parser_code
 
 def get_default_value(field):
-    return ''
-    # if field['type'] == 'string' and field['default'] != '':
-    #     return f"\"{field['default']}\""
-    # else:
-    #     return field['default']
+    if field['default'] == '':
+        return "std::nullopt"
+    if field['type'] == 'string':
+        return f"\"{field['default']}\""
+    else:
+        return field['default']
 
 def generate_json_parsers(types):
     parser_code = "\n// JSON parsing functions\n"
@@ -169,7 +171,7 @@ def generate_json_parsers(types):
             for field in type_info['fields']:
                 parser_code += f"    if (j.contains(\"{field['name']}\")) {{\n"
                 if is_primitive(field['type']):
-                    parser_code += f"        result.{field['name']} = j.at(\"{field['name']}\").get<{get_cpp_type(field['type'])}>({get_default_value(field)});\n"
+                    parser_code += f"        result.{field['name']} = parseJsonValue<{get_cpp_type(field['type'])}>(j.at(\"{field['name']}\"), {get_default_value(field)});\n"
                 elif is_array(field):
                     inner_type = field['type'][len(ARRAY_PREFIX):-1]
                     parser_code += f"        for (const auto& item : j.at(\"{field['name']}\")) {{\n"
