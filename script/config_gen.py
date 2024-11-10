@@ -242,9 +242,42 @@ def main(xml_file_path, output_dir):
     import datetime
     print(f"\n[{datetime.datetime.now()}] Generated {output_file_path} from {xml_file_path}")
 
+def printExampleConfig():
+    print("""
+<xml>
+<type name="Exchange" type="enum">
+    <value name="CME">1</value>
+    <value name="CBOE">2</value>
+</type>
+<type name="Gateway" type="struct">
+    <field name="ip" type="string" default="127.0.0.1" />
+    <field name="port" type="uint" default="1234" />
+    <field name="username" type="string" presence="optional" />
+    <field name="password" type="string" presence="optional" />
+    <field name="exchange" type="Exchange" />
+</type>
+<type name="Channel" type="struct">
+    <field name="interface" type="string" />
+    <field name="group" type="string" />
+    <field name="port" type="uint" />
+    <field name="name" type="string" presence="optional" />
+</type>
+<type name="Config" type="struct">
+    <field name="channels" type="array[Channel]" />
+    <field name="channel_ids" type="array[int]" presence="optional" />
+    <field name="channel_strings" type="array[string]" />
+    <field name="gateway" type="Gateway" />
+    <!-- map only supports string keys -->
+    <field name="channel_by_name" type="map[Channel]" presence="optional" />
+    <field name="cores" type="map[int]" presence="optional" />
+</type>
+</xml>""")
+
 if __name__ == "__main__":
     if len(sys.argv) != 3 or "--help" in sys.argv:
         print("Usage: python script.py <input_xml_file> <output_dir>")
         sys.exit(1)
-    
-    main(sys.argv[1], sys.argv[2])
+    if "--example" in sys.argv:
+        printExampleConfig()
+    else:
+        main(sys.argv[1], sys.argv[2])
